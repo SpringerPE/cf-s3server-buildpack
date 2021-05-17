@@ -51,6 +51,7 @@ set_gcs_config() {
     local services="${1}"
 
     export PROVIDER=gcs
+    mkdir -p ${AUTH_ROOT}
     for s in $(jq -r '.[] | .name' <<<"${services}")
     do
         jq -r --arg n "${s}" '.[] | select(.name == $n) | .credentials.PrivateKeyData' <<<"${services}" | base64 -d > "${AUTH_ROOT}/${s}-auth.json"
