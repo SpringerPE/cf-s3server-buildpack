@@ -148,4 +148,5 @@ then
     echo ">> Error, service '${BINDING_NAME}' not found!" >&2
     exit 1
 fi
-launch s3server -p ${PORT} --tmpfs /home/vcap/tmp -provider ${PROVIDER} -bucket ${BUCKET}
+cat $GOOGLE_APPLICATION_CREDENTIALS
+launch s3server -p ${PORT} -provider ${PROVIDER} -bucket ${BUCKET}
