@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+set -euo pipefail
+# https://docs.cloudfoundry.org/buildpacks/understand-buildpacks.html
+
+BUILD_DIR="${1}"
+CACHE_DIR="${2}"
+DEPS_DIR="${3}"
+DEPS_IDX="${4}"
+
+# dependencies paths
+S3SERVER_DIR="${DEPS_DIR}/${DEPS_IDX}/s3server"
+BUILDPACK_DIR=$(dirname $(readlink -f ${BASH_SOURCE%/*}))
+
+if [ -f "${BUILD_DIR}/runtime.txt" ]
+then
+    VERSION_S3SERVER=$((grep -v '^#' "${BUILD_DIR}/runtime.txt" || true) | head -n1)
+    if [ -z "${VERSION_S3SERVER}" ]
+    then
+        echo "ERROR> runtime.txt found but no version specified!"
+        exit 1
+    fi
+fi
+
+source ${BUILDPACK_DIR}/s3server-parameters.sh
+
+if [ -f "${CACHE_DIR}/s3server-${VERSION_S3SERVER}.bin" ]
+then
+    echo "-----> Using rclone ${VERSION_S3SERVER} from cache"
+else
+    echo "-----> Downloading rclone : ${DOWNLOAD_URL_S3SERVER}"
+    if ! wget -nv "${DOWNLOAD_URL_S3SERVER}" -O "${CACHE_DIR}/s3server-${VERSION_S3SERVER}.bin" 2>&1 | sed 's/^/       /'
+    then
+        echo "ERROR> s3server version ${VERSION_S3SERVER} not found, URL=${DOWNLOAD_URL_S3SERVER}"
+        exit 1
+    fi
+fi
+
+echo "-----> Installing s3server"
+mkdir -p "${S3SERVER_DIR}/bin"
+mv "${CACHE_DIR}/s3server-${VERSION_S3SERVER}.bin" "${S3SERVER_DIR}/bin/s3server"
+chmod +x "${S3SERVER_DIR}/bin/s3server"
+
+
